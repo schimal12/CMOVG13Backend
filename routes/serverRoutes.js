@@ -6,6 +6,7 @@ var ChatRoom = require("../models/chatroom");
 var Message = require("../models/message");
 
 router.get('/', (req, res) => {
+	console.log(req.params);
     res.send('Si sirvió esta cosa.');
 });
 
