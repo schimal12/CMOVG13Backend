@@ -1,4 +1,4 @@
-const user = require('../models/user');
+const user = require('../models/users');
 const bcrypt = require('bcryptjs');
 
 exports.loginUser = (email, password) => 
