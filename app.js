@@ -10,12 +10,10 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 const Rooms =  [];
-
+const privateRooms = [];
 
 //Documentation for Rooms
 io.on('connection', (socket) => {
-
-
   socket.on('join', (uNickname, roomname) => {
     console.log(uNickname +": has joined the chat in the room "+roomname);
     socket.join(roomname);
@@ -58,22 +56,37 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on("messageemit", (uNickname, messageText, roomname) => {
-    console.log(uNickname+": "+messageText);
-    var message = {"message": messageText, "uNickname":uNickname};
+  socket.on("mapemmit", (uNickname, val1, val2, roomname, type) => {
+    var txt = val1+"-"+val2;
+    var message = {"message": txt, "uNickname":uNickname, "roomname":roomname, "type":type};
     //Adding Messages to the Room. 
     //1) Checking if the Room exists (It should ...)
     const existance = Rooms.find(room => room.name == roomname);
     if(typeof existance !== 'undefined' && existance !== null){
       //2) Create Message 
-      const message = new Message(messageText, uNickname);
+      const message = new Message(txt, uNickname,type);
+      existance.addMessage(message);
+    }else{
+      console.log("There is an Error");
+    }
+    io.to(roomname).emit("messageMap",message);
+  });
+
+  socket.on("messageemit", (uNickname, messageText, roomname, type) => {
+    console.log(uNickname+": "+messageText);
+    var message = {"message": messageText, "uNickname":uNickname, "roomname":roomname, "type":type};
+    //Adding Messages to the Room. 
+    //1) Checking if the Room exists (It should ...)
+    const existance = Rooms.find(room => room.name == roomname);
+    if(typeof existance !== 'undefined' && existance !== null){
+      //2) Create Message 
+      const message = new Message(messageText, uNickname,type);
       existance.addMessage(message);
     }else{
       console.log("There is an Error");
     }
     io.to(roomname).emit("message",message);
   });
-
 
 
 
@@ -96,7 +109,7 @@ io.on('connection', (socket) => {
       var messageSet = existance.messages;
       var setMessagesRoom = [];
       messageSet.forEach(function (message) {
-        let messageU = {"username":message.user,"message":message.buffer};
+        let messageU = {"username":message.user,"message":message.buffer, "type":message.type};
         console.log("Ex: "+messageU);
         setMessagesRoom.push(messageU);
       });
@@ -187,9 +200,10 @@ app.use(function(req, res, next) {
   }
   
   class Message { 
-    constructor(buffer, user) {
-     this.buffer = buffer; 
-     this.user = user;
+    constructor(buffer, user,type) {
+    this.buffer = buffer; 
+    this.user = user;
+    this.type = type; 
     }
     printElements(){
       return this.user + " " + this.buffer;
